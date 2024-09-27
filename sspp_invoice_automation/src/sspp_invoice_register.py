@@ -3,7 +3,7 @@ import re
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
-from common.utils import perform_action_with_delay
+from common.utils import click_button_in_shadow_at_index, enter_text_in_shadow_input_at_index
 from sspp_invoice_constants import EPM_REGISTER_INVOICE_URL
 
 def extract_numbers(property_address):
@@ -47,6 +47,14 @@ def select_matching_address(driver, property_address):
 
     return False
 
+def input_contract_code(driver, epm_contract_code):
+    try:         
+        enter_text_in_shadow_input_at_index(driver, 1, epm_contract_code)
+        time.sleep(2)
+        enter_text_in_shadow_input_at_index(driver, 3, epm_contract_code)
+    except Exception as e:
+        print(f"Error: {e}")
+
 def register_invoice(driver, epm_contract_code, property_address):
     """
     Register a new invoice for a given contract and property address.
@@ -58,17 +66,18 @@ def register_invoice(driver, epm_contract_code, property_address):
     """
     driver.get(EPM_REGISTER_INVOICE_URL)
     
-    epm_contract_field = driver.find_element(By.XPATH, '//*[@id="ctl00_cphPrincipal_txtContrato"]')
-    perform_action_with_delay(epm_contract_field.send_keys, epm_contract_code)
-    
-    # Click on "Inscribir factura"
-    driver.find_element(By.XPATH, '//*[@id="ctl00_cphPrincipal_btnAdicionar"]').click()
-    time.sleep(1)
-    
-    # Click on "Continuar"
     WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="ctl00_cphPrincipal_BtnContinuarValidacionCaptcha"]'))
+            EC.visibility_of_element_located((By.XPATH, '//*[@id="contenido"]/div[2]/div/div/div/div[1]'))
     ).click()
+    
+    input_contract_code(driver, epm_contract_code)
+    
+    driver.find_element(By.XPATH, '//*[@id="verificarDireccion"]').click()
+    
+    click_button_in_shadow_at_index(driver, 6)
+    
+    
+    #to do: matching addresses
     
     if select_matching_address(driver, property_address):
         driver.find_element(By.XPATH, '//*[@id="ctl00_cphPrincipal_btnGuardar"]').click()

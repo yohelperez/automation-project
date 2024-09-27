@@ -1,8 +1,24 @@
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from sspp_invoice_constants import EPM_HOME_URL, USER_EMAIL, USER_PASSWORD
+from sspp_invoice_constants import EPM_LOGIN_URL, USER_EMAIL, USER_PASSWORD
+from common.utils import click_button_in_shadow_at_index
+
+def close_popup(driver):
+    WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, '//epm-header-accessibility'))
+    )
+    
+    try:
+        WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.XPATH, '//*[@id="continuar"]'))
+        ).click()
+        
+    #to do: close possible session time out button
+    except TimeoutException:
+        print("Botón 'Continuar' no encontrado. Continuando.")
 
 def is_user_logged_in(driver): 
     """
@@ -14,8 +30,9 @@ def is_user_logged_in(driver):
     Returns:
         bool: True if the user is logged in, False otherwise.
     """
-    try:
-        driver.find_element(By.XPATH, '//*[@id="ctl00_lblNombre"]')
+    try: 
+        close_popup(driver)
+        driver.find_element(By.XPATH, '//*[@id="sidenav"]/ul/li[2]/a/img')
         return True
     except NoSuchElementException:
         return False
@@ -28,21 +45,16 @@ def login(driver):
         driver (WebDriver): The Selenium WebDriver instance.
     """
     try:
-        driver.get(EPM_HOME_URL)
-        email_field = WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="ctl00_cphPrincipal_txtCorreo"]'))
-        )
-        email_field.send_keys(USER_EMAIL)
-
-        password_field = driver.find_element(By.XPATH, '//*[@id="ctl00_cphPrincipal_txtClave"]')
-        password_field.send_keys(USER_PASSWORD)
-
-        driver.find_element(By.XPATH, '//*[@id="ctl00_cphPrincipal_btnIngresar"]').click()
+        driver.get(EPM_LOGIN_URL)
+        close_popup(driver)
+        time.sleep(1)
+        click_button_in_shadow_at_index(driver, 0)
+        time.sleep(1)
         WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[@id="ctl00_cphPrincipal_lbVisualizadorHistorico"]'))
-        )
-        print("Inicio de sesión completado.")
+            EC.visibility_of_element_located((By.XPATH, '//*[@id="GoogleExchange"]'))
+        ).click()
         
+        print("Inicio de sesión completado.")
     except TimeoutException:
         print("Error: El elemento esperado no apareció a tiempo. Verifique el proceso de inicio de sesión.")
         raise
